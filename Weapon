@@ -1,42 +1,36 @@
 public class Weapon
 {
     private readonly int _damage;
+    private readonly int _bulletsPerShot;
     private int _bullets;
 
-    public Weapon(int damage, int bullets)
+    public Weapon(int damage, int bullets, int bulletsPerShot)
     {
-        if(damage <= 0)
-            throw new ArgumentException("Урон должен быть больше 0.", nameof(damage));
+        if (damage <= 0)
+            throw new ArgumentOutOfRangeException(nameof(damage), "Урон должен быть больше 0.");
 
-        if(bullets < 0)
+        if (bullets < 0)
             throw new ArgumentException("Пули не могут быть отрицательными.", nameof(bullets));
+
+        if (bulletsPerShot <= 0)
+            throw new ArgumentOutOfRangeException(nameof(bulletsPerShot), "Число пуль за выстрел должно быть больше 0.");
 
         _damage = damage;
         _bullets = bullets;
+        _bulletsPerShot = bulletsPerShot;
     }
 
-    public bool HasBullets()
-    {
-        return _bullets > 0;
-    }
+    public bool HasBullets { get { return _bullets >= _bulletsPerShot; } }
 
     public void Fire(Player player)
     {
-        if(player == null)
-        {
-            throw new ArgumentNullException(nameof(player));
-        }
+        if (player == null) throw new ArgumentNullException(nameof(player));
 
-        if (!HasBullets())
-        {
+        if (!HasBullets)
             throw new InvalidOperationException("Не осталось пуль для выстрела.");
-        }
 
-        if (HasBullets())
-        {
-            player.TakeDamage(_damage);
-            _bullets -= 1;
-        }
+        player.TakeDamage(_damage);
+        _bullets -= _bulletsPerShot;
     }
 }
 
@@ -46,8 +40,8 @@ public class Player
 
     public Player(int health)
     {
-        if(health <= 0)
-            throw new ArgumentException("Здоровье должно быть больше 0.", nameof(health));
+        if (health <= 0)
+            throw new ArgumentOutOfRangeException(nameof(health), "Здоровье должно быть больше 0.");
 
         _health = health;
     }
@@ -55,12 +49,9 @@ public class Player
     public void TakeDamage(int amount)
     {
         if (amount <= 0)
-            throw new ArgumentException("Сумма урона должна быть больше 0.", nameof(amount));
+            throw new ArgumentOutOfRangeException(nameof(amount), "Сумма урона должна быть больше 0.");
 
-        _health -= amount;
-
-        if (_health <= 0)
-            _health = 0;
+        _health = Math.Max(_health - amount, 0);
     }
 }
 
@@ -70,15 +61,15 @@ public class Bot
 
     public Bot(Weapon weapon)
     {
-        _weapon = weapon;
+        _weapon = weapon ?? throw new ArgumentNullException(nameof(weapon));
     }
 
     public void OnSeePlayer(Player player)
     {
-        if(player == null)
+        if (player == null)
             throw new ArgumentNullException(nameof(player));
 
-        if (_weapon.HasBullets())
+        if (_weapon.HasBullets)
             _weapon.Fire(player);
     }
 }
